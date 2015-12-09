@@ -1,0 +1,42 @@
+{doc:{
+    "headline": "CZECH ONLINE UP FOR SALE",
+    "body": "Czech Online, the Czech ISP, was put up for sale in an auction handled by HSBC Corporate Finance. America Online and Deutsche Telekom are among more than 20 bidders which are reportedly interested in the business. COL is owned by venture capitalist DB Ostereuropa.",
+    "publishDate": "2000-02-14T00:00:00.000Z",
+    "lastModifiedDate": "2000-02-14T00:00:00.000Z",
+    "id": "1",
+    "isProprietary": false,
+    "siteEditionTagging": [
+      {
+        "edition": "Europe",
+        "id": "1_1",
+        "product": "Mergermarket"
+      },
+      {
+        "edition": "North America",
+        "id": "1_2",
+        "product": "Mergermarket"
+      },
+      {
+        "edition": "EE",
+        "id": "1_2048",
+        "product": "Mergermarket"
+      },
+      {
+        "edition": "Europe",
+        "id": "2_1",
+        "product": "Dealreporter"
+      },
+      {
+        "edition": "North America",
+        "id": "2_2",
+        "product": "Dealreporter"
+      }
+    ],
+    "editionRestrictions": [
+      "1_1",
+      "1_2",
+      "1_2048",
+      "2_1",
+      "2_2"
+    ]
+  }}

@@ -1,0 +1,21 @@
+elasticsearch:
+  image: elasticsearch:latest
+  command: elasticsearch -Des.network.host=0.0.0.0
+  ports:
+    - "9200:9200"
+    - "9300:9300"
+
+#web:
+#  build: .
+#  environment:
+#    - PORT=8080
+#    - LOG_LEVEL=info
+#  ports:
+#    - "8080:8080"
+#  volumes:
+##   - ./:/usr/src/app - Normally we could use this in conjunction with .dockerignore to make sure node_modules dont get copied, however.. https://github.com/docker/compose/issues/1607
+#  - .:/usr/src/app
+#  links:
+#  - elasticsearch:elasticsearch
+#  - fakeUser:fakeUser
+#  command: node_modules/.bin/grunt eslint sass mochaTest dev
