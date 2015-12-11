@@ -3,14 +3,11 @@
 const Sync = require('sync');
 const prompt = require('prompt');
 const elasticsearchLoader = require('./elasticsearch-loader');
-const client = elasticsearchLoader.getClient();
+const intelDocs = require('./sample-intel-documents');
 
+const client = elasticsearchLoader.getClient();
 const indexName = 'percolator-index-test';
 const typeName = 'test-type';
-const sampleDoc = {
-    "headline": "CZECH ONLINE UP FOR SALE",
-    "body": "Czech Online, the Czech ISP, was put up for sale in an auction handled by HSBC Corporate Finance. America Online and Deutsche Telekom are among more than 20 bidders which are reportedly interested in the business. COL is owned by venture capitalist DB Ostereuropa.                                                ",
-};
 
 const percolateOptions = {
     index: indexName,
@@ -40,6 +37,14 @@ var schema = {
             description: 'How many percolator documents would you like to create?',
             required: true
         },
+        howManyMatches: {
+            description: 'How many documents would you like to match the prefined query? (expressed as a percent)',
+            conform: function(value){
+                return (value < 101)
+            },
+            message: 'Value must be less than 100%',
+            required: true
+        },
         percolate: {
             description: 'Do you want to percolate the documents when they have been added?',
             conform: function(value){
@@ -51,14 +56,8 @@ var schema = {
     }
 };
 
-//
-// Start the prompt
-//
 prompt.start();
 
-//
-// Get two properties from the user: email, password
-//
 prompt.get(schema, function (err, result) {
 
     let chain = new Promise(function(resolve, reject) {
@@ -71,12 +70,13 @@ prompt.get(schema, function (err, result) {
             if(result.remove === 'yes') {
                 chain = chain.then(function(){return elasticsearchLoader.deleteIndices()})
                              .then(function(){return elasticsearchLoader.createNewIndex(indexName)})
-                             .then(function(){return elasticsearchLoader.createMapping(indexName,typeName)});
+                             .then(function(){return elasticsearchLoader.createMapping(indexName,typeName,intelDocs.getRandomDocument())});
             }
 
             if(result.howManyDocs) {
                 chain = chain.then(function(){
-                    console.log('run',run+1);
+                    //console.log('run',run+1);
+                    console.log('pushing',result.howManyDocs, 'documents in... this may take a while');
                     let all = [];
                     if( (result.howManyDocs % profilesPerChunk) === 0 ){
                         let chunks = result.howManyDocs / profilesPerChunk;
@@ -86,10 +86,10 @@ prompt.get(schema, function (err, result) {
                         for(let i=0; i<chunks.length; i++){
                             let offset = chunks[i]*i;
                             //console.log('offset=',offset);
-                            all.push(elasticsearchLoader.createPercolatorQueriesFromDoc(chunks[i],sampleDoc,100,{offset:offset}));
+                            all.push(elasticsearchLoader.createPercolatorQueriesFromDoc(chunks[i],result.howManyMatches,{offset:offset}));
                         }
                     } else {
-                        all.push(elasticsearchLoader.createPercolatorQueriesFromDoc(result.howManyDocs,sampleDoc,100));
+                        all.push(elasticsearchLoader.createPercolatorQueriesFromDoc(result.howManyDocs,result.howManyMatches));
                     }
                     return Promise.all(all);
                 });
@@ -97,12 +97,13 @@ prompt.get(schema, function (err, result) {
 
             if(result.percolate === 'yes') {
                 chain = chain.then(function(){
-                    percolateOptions.body.doc = sampleDoc;
+                    percolateOptions.body.doc = intelDocs.getRandomDocument();
                     client.percolate(percolateOptions, function (error, response) {
                         if(error) console.log(error);
-                        //console.log(response);
+                        console.log(response);
                         console.log('percolate took',response.took,'ms');
                         console.log('matched',response.total,'documents');
+                        console.log('Bye!');
                     });
                 });
             }

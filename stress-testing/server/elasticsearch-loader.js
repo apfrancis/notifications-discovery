@@ -1,6 +1,7 @@
 'use strict';
 
 const elasticsearch = require('elasticsearch');
+const percolatorDocGenerator = require('./percolator-doc-generator');
 var Spinner = require('cli-spinner').Spinner;
 
 var spinner = new Spinner('processing.. %s');
@@ -8,7 +9,7 @@ spinner.setSpinnerString('|/-\\');
 
 const clientConfig = {
     host: process.env['ELASTICSEARCH_HOST']+':'+process.env['ELASTICSEARCH_PORT'],
-    log: 'error'
+    log: 'info'
 };
 
 if(process.env['ELASTICSEARCH_AUTH']){
@@ -20,63 +21,38 @@ if(process.env['ELASTICSEARCH_AUTH']){
 
 const client = new elasticsearch.Client(clientConfig);
 
-function createPercolatorQueriesFromDoc(number,sampleDoc,percentageToMatch,opts){
-    spinner.start();
-    let percent = (percentageToMatch / 100);
+function createPercolatorQueriesFromDoc(number,percentageToMatch,opts) {
+
     let bulkArray = [];
+    let percent = (percentageToMatch / 100);
     let offset = (opts) ? opts.offset : 0;
 
     for(let i=0+offset; i<number+offset; i++){
-        const num = Math.random();
 
-        let randomProperty = (num < percent) ? chooseRandomProperty(sampleDoc) : {"headline":"willnotmatch"};
-        //console.info('creating','alert-'+i, 'percolator query on','percolator-index-test','with property',Object.keys(randomProperty)[0]);
-        let o = {};
-        o.index = createPercoatorQuery('percolator-index-test','alert-'+i,randomProperty);
-        bulkArray.push(o);
-        o = {};
-        o.query = {match:{}};
-        o.query.match = randomProperty;
-        bulkArray.push(o);
+        bulkArray.push({index:createPercoatorQuery('percolator-index-test','alert-'+i)});
+
+        const query = (Math.random() < percent) ? percolatorDocGenerator.getRandomQuery() : {query:{"headline":"willnotmatch"}};
+        bulkArray.push(query);
     }
 
-
-    spinner.stop();
     return client.bulk({
         body: bulkArray
     });
 }
 
-function createPercoatorQuery(index,id,query){
-    //const queryWrapper =  {
-    //    // This query will be run against documents sent to percolate
-    //    query: {match:'{{query}}'}
-    //};
-    //
-    //queryWrapper.query.match = query;
+function createPercoatorQuery(index,id){
 
     return {
         _index: index,
         _type: '.percolator',
         _id: id
     };
-
-
-    //var x = {
-    //    "index" : {
-    //        "_index" : "my-index",
-    //        "_type" : ".percolator",
-    //        "_id" : "1"
-    //    } }
-    //{ "query" : { "match" : { "message" : "bonsai tree" } }}
 }
 
 function chooseRandomProperty (doc) {
     const keys = Object.keys(doc);
     const randomishNumber = keys.length * Math.random() << 0;
     const o = {};
-    //console.log(keys[randomishNumber]);
-    //console.log(obj[keys[randomishNumber]]);
     o[keys[randomishNumber].toString()] = doc[keys[randomishNumber]];
     return o;
 }
@@ -95,22 +71,14 @@ function createNewIndex(indexName) {
     return client.indices.create({index:indexName});
 }
 
-function createMapping(indexName,type){
+function createMapping(indexName,type,sampleDoc){
 
     console.log('creating new mapping on index:',indexName,'type:',type);
-    return client.indices.putMapping({
-        index:indexName,
-        type:type,
-        body: {
-            "properties": {
-                "body": {
-                    "type": "string"
-                },
-                "headline": {
-                    "type": "string"
-                }
-            }
-        }
+    client.create({
+        index: indexName,
+        type: type,
+        body: sampleDoc,
+        id: 1
     });
 }
 
